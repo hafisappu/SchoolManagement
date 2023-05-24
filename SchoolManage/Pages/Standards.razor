@@ -1,0 +1,171 @@
+﻿@page "/standards"
+@using System
+@using System.Linq
+@using SchoolManage.Data
+@using Microsoft.AspNetCore.Components.Forms
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+@inject IStandardService StandardService
+@inject MudBlazor.ISnackbar snackBar
+@inject IDialogService DialogService
+
+<MudButton @onclick="@(() => Edit(new Standard()))" Variant="Variant.Filled" Color="Color.Primary">
+    Add standard
+</MudButton>
+
+
+
+<MudTable Items="GetStandards()" Filter="new Func<Standard, bool>(Search)" @bind-standard="standard">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Standards</MudText>
+        <MudSpacer />
+       
+        <MudTextField @bind-Value="searchString" Placeholder="Search Standard... "
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Standard</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Standard">@context.StandardName</MudTd>
+        <MudTd DataLabel="Actions">
+            <MudFab OnClick="@(()=>Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small"></MudFab>
+            <MudFab OnClick="@(()=>Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small"></MudFab>
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+
+    private string searchString="";
+    private Standard standard = new Standard();
+    private List<Standard> standards = new List<Standard>();
+    private bool editMode = false;
+
+    private void edit(Standard std)
+    {
+        DialogService.Show<Addstd>("Add Standard");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        standards = await GetStandardsAsync();
+    }
+
+    private async Task<List<Standard>> GetStandardsAsync()
+    {
+        return await StandardService.GetStandards();
+    }
+
+    private bool Search(Standard standard)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        if (standard.StandardName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private List<Standard> GetStandards()
+    {
+        return standards;
+    }
+
+    private async Task AddStandard()
+    {
+        var validationContext = new ValidationContext(standard, serviceProvider: null, items: null);
+        var validationResults = new List<ValidationResult>();
+        bool isValid = Validator.TryValidateObject(standard, validationContext, validationResults, true);
+
+        if (isValid)
+        {
+            if (!editMode)
+            {
+                // Check for duplicate Standard names
+                bool isDuplicate = standards.Any(s => s.StandardName.Equals(standard.StandardName, StringComparison.OrdinalIgnoreCase));
+                if (isDuplicate)
+                {
+                    snackBar.Add("Standard with this name already exists", Severity.Error);
+                    return;
+                }
+
+                await StandardService.AddStandard(standard);
+                snackBar.Add("Standard Added", Severity.Success);
+                standard = new Standard();
+                standards = await GetStandardsAsync();
+            }
+            else
+            {
+                await Update(standard);
+                standard = new Standard();
+                editMode = false;
+            }
+        }
+        else
+        {
+            foreach (var validationResult in validationResults)
+            {
+                snackBar.Add(validationResult.ErrorMessage, Severity.Warning);
+            }
+        }
+    }
+
+
+    private async Task Edit(Standard standard)
+    {
+        this.standard = standard;
+        editMode = true;
+        DialogService.Show<Addstd>("Update Standard");
+    }
+
+
+
+    private async Task Update(Standard standard)
+    {
+        var validationContext = new ValidationContext(standard, serviceProvider: null, items: null);
+        var validationResults = new List<ValidationResult>();
+        bool isValid = Validator.TryValidateObject(standard, validationContext, validationResults, true);
+
+        if (isValid)
+        {
+            // Check for duplicate Standard names
+            bool isDuplicate = standards.Any(s => s.StandardId != standard.StandardId && s.StandardName.Equals(standard.StandardName, StringComparison.OrdinalIgnoreCase));
+            if (isDuplicate)
+            {
+                snackBar.Add("Standard with this name already exists", Severity.Error);
+                return;
+            }
+
+            await StandardService.UpdateStandard(standard);
+            standards = await StandardService.GetStandards();
+            snackBar.Add("Standard updated successfully", Severity.Success);
+        }
+        else
+        {
+            foreach (var validationResult in validationResults)
+            {
+                snackBar.Add(validationResult.ErrorMessage, Severity.Error);
+            }
+        }
+    }
+
+    private async Task Delete(Standard standard)
+    {
+        if (standard.StandardId > 0)
+        {
+            string message = $"Are you sure you want to delete {standard.StandardName}?";
+            bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", new object[] { message });
+            if (confirmed)
+            {
+                await StandardService.DeleteStandard(standard.StandardId);
+                standards = await StandardService.GetStandards();
+                standard = new Standard();
+                snackBar.Add("Standard deleted successfully", Severity.Success);
+            }
+        }
+    }
+}

@@ -1,0 +1,189 @@
+﻿@page "/students"
+@using System
+@using System.Linq
+@using SchoolManage.Data
+@using Microsoft.AspNetCore.Components.Forms
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+@inject IStandardService StandardService
+@inject IStudentService StudentService
+@inject MudBlazor.ISnackbar snackBar
+
+<MudCard Elevation="25">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Add Student</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <EditForm OnValidSubmit="AddStudent" Model="@student">
+            <DataAnnotationsValidator/>
+            <MudGrid>
+                <MudItem xs="12" md="6" sm="4">
+                    <MudTextField @bind-Value=student.StudentName Label="Student Name" Required="true"></MudTextField>
+                    <ValidationMessage For="@(() => student.StudentName)" />
+                </MudItem>
+                <MudItem xs="12" md="6" sm="4">
+                    <MudTextField @bind-Value=student.Age Label="Age" Required="true"></MudTextField>
+                    <ValidationMessage For="@(() => student.Age)" />
+                </MudItem>
+                <MudItem xs="12" md="6" sm="4">
+                    <MudSelect Label="Select Standard" @bind-Value="student.StandardId" Required="true">
+                        @foreach (var std in standards)
+                        {
+                            <MudSelectItem Value="@std.StandardId">@std.StandardName</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <ValidationMessage For="@(() => student.StandardId)" />
+                </MudItem>
+            </MudGrid>
+            <br/>
+            <MudButton Color="@((editMode) ? Color.Warning : Color.Info)" Variant="Variant.Filled" OnClick="AddStudent">
+                @((editMode) ? "Update Student" : "Add Student")
+            </MudButton>
+        </EditForm>
+    </MudCardContent>
+</MudCard>
+<br/>
+
+<MudTable Items="GetStudents()" Filter="new Func<Student, bool>(Search)" @bind-student="student" AllowUnsorted="false">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Students</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="searchString" Placeholder="Search for Students..."></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>Age</MudTh>
+        <MudTh>standard</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Student Name">@context.StudentName</MudTd>
+        <MudTd DataLabel="Age">@context.Age</MudTd>
+        <MudTd DataLabel="Standard">@context.Standard.StandardName</MudTd>
+        <MudTd DataLabel="Actions">
+            <MudFab OnClick="@(()=>Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small"></MudFab>
+            <MudFab OnClick="@(()=>Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small"></MudFab>
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+
+    private string searchString = "";
+    private Student student = new Student();
+    private Standard standard = new Standard();
+    private List<Student> students = new List<Student>();
+    private List<Standard> standards = new List<Standard>();
+    private bool editMode = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        students = await GetStudentsAsync();
+        standards = await GetStandardsAsync();
+    }
+
+    private async Task<List<Student>> GetStudentsAsync()
+    {
+        return await StudentService.GetStudents();
+    }
+
+    private async Task<List<Standard>> GetStandardsAsync()
+    {
+        return await StandardService.GetStandards();
+
+    }
+
+    private bool Search(Student student)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        if (student.StudentName.Contains(searchString, StringComparison.OrdinalIgnoreCase)
+            ||student.Standard.StandardName.Contains(searchString, StringComparison.OrdinalIgnoreCase))      
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private List<Student> GetStudents()
+    {
+        return students;
+    }
+
+    private async Task AddStudent()
+    {
+        var validationContext = new ValidationContext(student, serviceProvider: null, items: null);
+        var validationResults = new List<ValidationResult>();
+        bool isValid = Validator.TryValidateObject(student, validationContext, validationResults, true);
+
+        if (isValid)
+        {
+            if (!editMode)
+            {
+                await StudentService.AddStudent(student);
+                snackBar.Add("Student Added Successfully", Severity.Success);
+                student = new Student();
+                students = await GetStudentsAsync();
+            }
+            else
+            {
+                await Update(student);
+                student = new Student();
+                editMode = false;
+            }
+        }
+        else
+        {
+            foreach (var validationResult in validationResults)
+            {
+                snackBar.Add(validationResult.ErrorMessage, Severity.Warning);
+            }
+        }
+    }
+
+    private async Task Edit(Student student)
+    {
+        this.student = student;
+        student.StandardId = student.Standard.StandardId;
+        editMode = true;
+    }
+
+    private async Task Update(Student student)
+    {
+        var validationContext = new ValidationContext(student, serviceProvider: null, items: null);
+        var validationResults = new List<ValidationResult>();
+        bool isValid = Validator.TryValidateObject(student, validationContext, validationResults, true);
+
+        if (isValid)
+        {
+            await StudentService.UpdateStudent(student);
+            students = await StudentService.GetStudents();
+            snackBar.Add("Student updated successfully", Severity.Success);
+        }
+        else
+        {
+            foreach (var validationResult in validationResults)
+            {
+                snackBar.Add(validationResult.ErrorMessage, Severity.Warning);
+            }
+        }
+    }
+
+    private async Task Delete(Student student)
+    {
+        if (student.StudentId > 0)
+        {
+            string message = $"Are you sure you want to delete <b>{student.StudentName}<b>?";
+            bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", new object[] { message });
+            if (confirmed)
+            {
+                await StudentService.DeleteStudent(student.StudentId);
+                students = await StudentService.GetStudents();
+                student = new Student();
+                snackBar.Add("Student deleted successfully", Severity.Success);
+            }
+        }
+    }
+}

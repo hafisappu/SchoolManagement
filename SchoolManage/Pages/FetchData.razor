@@ -1,0 +1,93 @@
+﻿@page "/fetchdata"
+@using System
+@using System.Linq
+@using SchoolManage.Data
+@using MudBlazor
+@inject IStandardService StandardService
+@inject IStudentService StudentService
+@inject ITeacherService TeacherService
+
+<MudCard Elevation="25">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Select Standard</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudSelect T="Standard" Label="Select a Standard" Value="selectedStandard" ValueChanged="LoadTeachersAndStudents">
+            @foreach (var standard in standards)
+            {
+                <MudSelectItem T="Standard" Value="@standard">@standard.StandardName</MudSelectItem>
+            }
+        </MudSelect>
+    </MudCardContent>
+</MudCard>
+
+<br />
+
+@if (selectedStandard != null)
+{
+    <MudTable Items="@selectedTeachers">
+        <ToolBarContent>
+                <MudText Typo="Typo.h6">Teacher</MudText>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Mobile Number</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.Name</MudTd>
+            <MudTd>@context.MobileNumber</MudTd>
+        </RowTemplate>
+    </MudTable>
+ 
+<br />
+
+    <MudTable Items="@selectedStudents">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Students</MudText>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Age</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.StudentName</MudTd>
+            <MudTd>@context.Age</MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<Standard> standards = new List<Standard>();
+    private Standard selectedStandard;
+    private List<Teacher> selectedTeachers = new List<Teacher>();
+    private List<Student> selectedStudents = new List<Student>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        standards = await GetStandardsAsync();
+    }
+
+    private async Task<List<Standard>> GetStandardsAsync()
+    {
+        return await StandardService.GetStandards();
+    }
+
+    private async Task LoadTeachersAndStudents(Standard standard)
+    {
+        selectedStandard = standard;
+        selectedTeachers = await GetTeachersByStandard(standard.StandardId);
+        selectedStudents = await GetStudentsByStandard(standard.StandardId);
+    }
+
+    public async Task<List<Teacher>> GetTeachersByStandard(int standardId)
+    {
+        return await TeacherService.GetTeachersByStandard(standardId);
+    }
+
+    public async Task<List<Student>> GetStudentsByStandard(int standardId)
+    {
+        return await StudentService.GetStudentsByStandard(standardId);
+    }
+}
