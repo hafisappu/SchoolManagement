@@ -64,7 +64,7 @@
         <MudTd DataLabel="Standard">@context.Standard.StandardName</MudTd>
         <MudTd DataLabel="Actions">
             <MudFab OnClick="@(()=>Edit(context))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small"></MudFab>
-            <MudFab OnClick="@(()=>Delete(context))" Color="Color.Warning" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small"></MudFab>
+            <MudFab OnClick="@(()=>Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small"></MudFab>
         </MudTd>
     </RowTemplate>
 </MudTable>
