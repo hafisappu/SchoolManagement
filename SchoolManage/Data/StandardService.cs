@@ -1,4 +1,5 @@
 ﻿using SchoolManage.Data;
+using System.Data;
 using System.Data.SqlClient;
 
 public interface IStandardService
@@ -22,7 +23,10 @@ public class StandardService : IStandardService
     {
         using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync();
-        using var command = new SqlCommand("SELECT * FROM Standards", connection);
+
+        using var command = new SqlCommand("GetStandards", connection); // Name of the stored procedure
+        command.CommandType = CommandType.StoredProcedure;
+
         using var reader = await command.ExecuteReaderAsync();
 
         var standards = new List<Standard>();
@@ -34,35 +38,52 @@ public class StandardService : IStandardService
                 StandardName = reader.GetString(reader.GetOrdinal("StandardName"))
             });
         }
+
         return standards;
     }
+
 
     public async Task AddStandard(Standard standard)
     {
         using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync();
-        using var command = new SqlCommand("INSERT INTO Standards (StandardName) VALUES (@StandardName)", connection);
+
+        using var command = new SqlCommand("AddStandard", connection); // Name of the stored procedure
+        command.CommandType = CommandType.StoredProcedure;
+
         command.Parameters.AddWithValue("@StandardName", standard.StandardName);
+
         await command.ExecuteNonQueryAsync();
     }
+
 
     public async Task UpdateStandard(Standard standard)
     {
         using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync();
-        using var command = new SqlCommand("UPDATE Standards SET StandardName = @StandardName WHERE StandardId = @StandardId", connection);
+
+        using var command = new SqlCommand("UpdateStandard", connection); // Name of the stored procedure
+        command.CommandType = CommandType.StoredProcedure;
+
         command.Parameters.AddWithValue("@StandardId", standard.StandardId);
         command.Parameters.AddWithValue("@StandardName", standard.StandardName);
+
         await command.ExecuteNonQueryAsync();
     }
+
 
     public async Task DeleteStandard(int standardId)
     {
         using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync();
-        using var command = new SqlCommand("DELETE FROM Standards WHERE StandardId = @StandardId", connection);
+
+        using var command = new SqlCommand("DeleteStandard", connection); // Name of the stored procedure
+        command.CommandType = CommandType.StoredProcedure;
+
         command.Parameters.AddWithValue("@StandardId", standardId);
+
         await command.ExecuteNonQueryAsync();
     }
+
 
 }

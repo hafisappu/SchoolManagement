@@ -1,4 +1,5 @@
-﻿using System.Data.SqlClient;
+﻿using System.Data;
+using System.Data.SqlClient;
 
 namespace SchoolManage.Data
 {
@@ -24,7 +25,10 @@ namespace SchoolManage.Data
         {
             using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync();
-            using var command = new SqlCommand("SELECT * FROM Students INNER JOIN Standards ON Students.StandardId = Standards.StandardId", connection);
+
+            using var command = new SqlCommand("GetStudentsWithStandards", connection); // Name of the stored procedure
+            command.CommandType = CommandType.StoredProcedure;
+
             using var reader = await command.ExecuteReaderAsync();
 
             var students = new List<Student>();
@@ -42,47 +46,68 @@ namespace SchoolManage.Data
                     }
                 });
             }
+
             return students;
         }
+
 
         public async Task AddStudent(Student student)
         {
             using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync();
-            using var command = new SqlCommand("INSERT INTO Students (StudentName, Age, StandardId) VALUES (@StudentName, @Age, @StandardId)", connection);
+
+            using var command = new SqlCommand("AddStudent", connection); // Name of the stored procedure
+            command.CommandType = CommandType.StoredProcedure;
+
             command.Parameters.AddWithValue("@StudentName", student.StudentName);
             command.Parameters.AddWithValue("@Age", student.Age);
             command.Parameters.AddWithValue("@StandardId", student.StandardId);
+
             await command.ExecuteNonQueryAsync();
         }
+
 
         public async Task UpdateStudent(Student student)
         {
             using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync();
-            using var command = new SqlCommand("UPDATE Students SET StudentName = @StudentName, Age = @Age, StandardId = @StandardId WHERE StudentId = @StudentId", connection);
+
+            using var command = new SqlCommand("UpdateStudent", connection); // Name of the stored procedure
+            command.CommandType = CommandType.StoredProcedure;
+
             command.Parameters.AddWithValue("@StudentId", student.StudentId);
             command.Parameters.AddWithValue("@StudentName", student.StudentName);
             command.Parameters.AddWithValue("@Age", student.Age);
             command.Parameters.AddWithValue("@StandardId", student.StandardId);
+
             await command.ExecuteNonQueryAsync();
         }
+
 
         public async Task DeleteStudent(int studentId)
         {
             using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync();
-            using var command = new SqlCommand("DELETE FROM Students WHERE StudentId = @StudentId", connection);
+
+            using var command = new SqlCommand("DeleteStudent", connection); // Name of the stored procedure
+            command.CommandType = CommandType.StoredProcedure;
+
             command.Parameters.AddWithValue("@StudentId", studentId);
+
             await command.ExecuteNonQueryAsync();
         }
+
 
         public async Task<List<Student>> GetStudentsByStandard(int standardId)
         {
             using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync();
-            using var command = new SqlCommand("SELECT * FROM Students WHERE StandardId = @StandardId", connection);
+
+            using var command = new SqlCommand("GetStudentsByStandard", connection); // Name of the stored procedure
+            command.CommandType = CommandType.StoredProcedure;
+
             command.Parameters.AddWithValue("@StandardId", standardId);
+
             using var reader = await command.ExecuteReaderAsync();
 
             var students = new List<Student>();
@@ -96,8 +121,10 @@ namespace SchoolManage.Data
                     StandardId = reader.GetInt32(reader.GetOrdinal("StandardId"))
                 });
             }
+
             return students;
         }
+
 
     }
 }
