@@ -68,6 +68,8 @@
         </MudTd>
     </RowTemplate>
 </MudTable>
+<br/>
+<br />
 
 @code {
 
@@ -174,7 +176,7 @@
     {
         if (teacher.Id > 0)
         {
-            string message = $"Are you sure you want to delete <b>{teacher.Name}<b>?";
+            string message = $"Are you sure you want to delete {teacher.Name}?";
             bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", new object[] { message });
             if(confirmed)
             {

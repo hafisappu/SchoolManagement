@@ -10,10 +10,26 @@
 @inject MudBlazor.ISnackbar snackBar
 @inject IDialogService DialogService
 
-<MudButton @onclick="@(() => Edit(new Standard()))" Variant="Variant.Filled" Color="Color.Primary">
-    Add standard
-</MudButton>
-
+<MudCard Elevation="25">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Add Standard</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <EditForm OnValidSubmit="AddStandard" Model="@standard">
+            <DataAnnotationsValidator />
+            <MudTextField @bind-Value=standard.StandardName Label="Standard" Required="true">
+                <ValidationMessage For="@(() => standard.StandardName)" />
+            </MudTextField>
+            <br/>
+            <MudButton Color="@((editMode) ? Color.Warning : Color.Info)" Variant="Variant.Filled" OnClick="AddStandard">
+                @((editMode) ? "Update Standard" : "Add Standard")
+            </MudButton>
+        </EditForm>
+    </MudCardContent>
+</MudCard>
+<br/>
 
 
 <MudTable Items="GetStandards()" Filter="new Func<Standard, bool>(Search)" @bind-standard="standard">
@@ -37,18 +53,14 @@
         </MudTd>
     </RowTemplate>
 </MudTable>
-
+<br />
+<br />
 @code {
 
     private string searchString="";
     private Standard standard = new Standard();
     private List<Standard> standards = new List<Standard>();
     private bool editMode = false;
-
-    private void edit(Standard std)
-    {
-        DialogService.Show<Addstd>("Add Standard");
-    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -119,7 +131,6 @@
     {
         this.standard = standard;
         editMode = true;
-        DialogService.Show<Addstd>("Update Standard");
     }
 
 
