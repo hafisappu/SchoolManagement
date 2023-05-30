@@ -47,7 +47,7 @@
 </MudCard>
 <br/>
 
-<MudTable Items="GetStudents()" Filter="new Func<Student, bool>(Search)" @bind-student="student" AllowUnsorted="false">
+<MudTable @ref=@_table Items="GetStudents()" RowsPerPage="@selectedRowsPerPage" Filter="new Func<Student, bool>(Search)" @bind-student="student" AllowUnsorted="false">
     <ToolBarContent>
         <MudText Typo="Typo.h6">Students</MudText>
         <MudSpacer />
@@ -68,10 +68,31 @@
             <MudFab OnClick="@(()=>Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small"></MudFab>
         </MudTd>
     </RowTemplate>
+    <PagerContent>
+        <div style="display: flex; justify-content: center; align-items: center;">
+            <span>Show</span>
+            <div style="margin-left: 10px;">
+                <MudSelect @bind-Value="selectedRowsPerPage" Variant="Variant.Outlined" Class="pa-2" Style="width: auto; display: inline-table;">
+                    @foreach (var option in rowsPerPageOptions)
+                    {
+                        <MudSelectItem Value="option">@option</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+
+            <div style="margin-left: 20px;">
+                <MudPagination SelectedChanged="PageChanged" Count="@((_table.GetFilteredItemsCount() + selectedRowsPerPage - 1) / selectedRowsPerPage)" Class="pa-4" Variant="Variant.Outlined" />
+            </div>
+        </div>
+    </PagerContent>
 </MudTable>
 <br />
 <br />
 @code {
+    private MudTable<Student> _table;
+
+    private int selectedRowsPerPage = 5;
+    private int[] rowsPerPageOptions = { 5, 10, 20, 30, 50 };
 
     private string searchString = "";
     private Student student = new Student();
@@ -85,6 +106,12 @@
         students = await GetStudentsAsync();
         standards = await GetStandardsAsync();
     }
+
+    private void PageChanged(int i)
+    {
+        _table.NavigateTo(i - 1);
+    }
+
 
     private async Task<List<Student>> GetStudentsAsync()
     {

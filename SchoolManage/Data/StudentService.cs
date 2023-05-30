@@ -55,7 +55,7 @@ namespace SchoolManage.Data
         {
             using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync();
-
+            
             using var command = new SqlCommand("AddStudent", connection); // Name of the stored procedure
             command.CommandType = CommandType.StoredProcedure;
 

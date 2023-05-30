@@ -67,6 +67,9 @@
             <MudFab OnClick="@(()=>Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small"></MudFab>
         </MudTd>
     </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 5, 10, 25, 50, 100, int.MaxValue }" HorizontalAlignment="HorizontalAlignment.Center" />
+    </PagerContent>
 </MudTable>
 <br/>
 <br />
