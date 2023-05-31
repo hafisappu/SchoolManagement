@@ -72,7 +72,7 @@
         <div style="display: flex; justify-content: center; align-items: center;">
             <span>Show</span>
             <div style="margin-left: 10px;">
-                <MudSelect @bind-Value="selectedRowsPerPage" Variant="Variant.Outlined" Class="pa-2" Style="width: auto; display: inline-table;">
+                <MudSelect @bind-Value="selectedRowsPerPage" Variant="Variant.Outlined" Class="pa-2" Style="width: auto;">
                     @foreach (var option in rowsPerPageOptions)
                     {
                         <MudSelectItem Value="option">@option</MudSelectItem>
